@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class AppConfig {
   // Masukkan API Key Gemini / GCP di sini
-  static String geminiApiKey = "YOUR_GEMINI_API_KEY";
-  static String gcpTtsApiKey = "YOUR_GCP_TTS_API_KEY";
+  static String geminiApiKey = "AIzaSyA63c6kP8PtNHGXUMa1O_MI8JjVxK_PQjM";
+  static String gcpTtsApiKey = "AIzaSyBdiv-bTEMQDgVQxAWCaqs4s88IhuwTELA";
 
   static const String appName = "MataSuara";
   static const String appTagline = "Scanner & Asisten Suara Disabilitas Netra";

@@ -45,7 +45,7 @@ class _HomeScannerScreenState extends State<HomeScannerScreen> {
 
     // Salam selamat datang otomatis dalam suara
     _ttsService.speak(
-        "Selamat datang di VisionAssist AI. Aplikasi siap digunakan. Silakan pilih mode dan tekan tombol Pindai.");
+        "Aplikasi siap digunakan. Silakan pilih mode dan tekan tombol Pindai.");
   }
 
   Future<void> _requestPermissions() async {
@@ -168,121 +168,207 @@ class _HomeScannerScreenState extends State<HomeScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF1F5F9), // Slate 100 Background
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
-        scrolledUnderElevation: 1,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        scrolledUnderElevation: 2,
+        toolbarHeight: 70,
+        title: Row(
           children: [
-            Text(
-              AppConfig.appName,
-              style: GoogleFonts.outfit(
-                color: AppColors.primaryBlue,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: const LinearGradient(
+                  colors: [AppColors.primaryBlue, AppColors.secondaryEmerald],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryBlue.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.asset(
+                  'assets/images/app_logo.png',
+                  width: 42,
+                  height: 42,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-            Text(
-              AppConfig.appTagline,
-              style: GoogleFonts.inter(
-                color: AppColors.textSubtle,
-                fontSize: 12,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    AppConfig.appName,
+                    style: GoogleFonts.outfit(
+                      color: AppColors.primaryBlue,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  Text(
+                    AppConfig.appTagline,
+                    style: GoogleFonts.inter(
+                      color: AppColors.textSubtle,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: AppColors.primaryBlue),
-            onPressed: () => _showApiKeyDialog(context),
-            tooltip: "Pengaturan API Key",
+          Semantics(
+            label: "Ulangi Suara Terakhir",
+            button: true,
+            child: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBlue.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.volume_up_rounded, color: AppColors.primaryBlue, size: 22),
+              ),
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                _ttsService.speak(_lastResultText);
+              },
+              tooltip: "Ulangi Suara Terakhir",
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.volume_up_rounded, color: AppColors.primaryBlue),
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              _ttsService.speak(_lastResultText);
-            },
-            tooltip: "Ulangi Suara Terakhir",
-          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // Mode Selector Bar
+            // Mode Selector Grid
             _buildModeSelector(),
 
-            // Camera Preview Display dengan Card Light Glassmorphism
+            // Camera Viewfinder Display dengan Reticle Corner Overlay
             Expanded(
               child: Container(
-                margin: const EdgeInsets.all(16),
+                margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Colors.black,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.borderLight, width: 2),
+                  border: Border.all(color: AppColors.primaryBlue, width: 3),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
+                      color: AppColors.primaryBlue.withValues(alpha: 0.15),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
                     ),
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(21),
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
                       // Camera Stream
                       if (_isCameraInitialized && _cameraController != null)
-                        CameraPreview(_cameraController!)
+                        SizedBox.expand(
+                          child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: _cameraController!.value.previewSize?.height ?? 100,
+                              height: _cameraController!.value.previewSize?.width ?? 100,
+                              child: CameraPreview(_cameraController!),
+                            ),
+                          ),
+                        )
                       else
                         Container(
-                          color: const Color(0xFFF1F5F9),
+                          color: const Color(0xFF0F172A),
                           child: const Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.camera_alt_outlined, size: 64, color: AppColors.textSubtle),
+                                Icon(Icons.camera_alt_rounded, size: 54, color: Colors.white54),
                                 SizedBox(height: 12),
                                 Text(
                                   "Menyiapkan Kamera...",
-                                  style: TextStyle(color: AppColors.textSubtle, fontWeight: FontWeight.w600),
+                                  style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 16),
                                 ),
                               ],
                             ),
                           ),
                         ),
 
-                      // Sound Wave Visualizer ketika AI bicara
+                      // Scanner Frame Reticle Corner Overlays (WCAG Visual Focus)
+                      _buildCameraReticle(),
+
+                      // Mode Badge Tag (Atas Kiri Kamera)
                       Positioned(
-                        top: 16,
+                        top: 14,
+                        left: 14,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(color: Colors.white24, width: 1),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(_getIconForMode(_selectedMode), color: Colors.white, size: 16),
+                              const SizedBox(width: 6),
+                              Text(
+                                _getTitleForMode(_selectedMode),
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Sound Wave Visualizer ketika AI bicara / dengerin
+                      Positioned(
+                        top: 14,
+                        right: 14,
                         child: SoundWaveVisualizer(
                           isSpeaking: _ttsService.isSpeaking || _isListening,
-                          label: _isListening ? "Mendengarkan Suara..." : "Menyuarakan Hasil AI...",
+                          label: _isListening ? "Mendengarkan..." : "Bicara AI...",
                         ),
                       ),
 
                       // Overlay Loading Scanner
                       if (_isAnalyzing)
                         Container(
-                          color: Colors.white.withValues(alpha: 0.85),
+                          color: Colors.black.withValues(alpha: 0.75),
                           child: Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const CircularProgressIndicator(
-                                  color: AppColors.primaryBlue,
+                                  color: AppColors.secondaryEmerald,
                                   strokeWidth: 4,
                                 ),
                                 const SizedBox(height: 20),
                                 Text(
                                   "Sedang Memproses AI Vision...",
                                   style: GoogleFonts.outfit(
-                                    color: AppColors.textDark,
+                                    color: Colors.white,
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -297,19 +383,19 @@ class _HomeScannerScreenState extends State<HomeScannerScreen> {
               ),
             ),
 
-            // Card Output Teks Hasil AI (Light Mode High-Contrast)
+            // Card Output Teks Hasil AI (High Contrast WCAG AAA)
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(16),
               width: double.infinity,
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.4), width: 2),
+                border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3), width: 2),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primaryBlue.withValues(alpha: 0.08),
-                    blurRadius: 12,
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
                 ],
@@ -318,16 +404,49 @@ class _HomeScannerScreenState extends State<HomeScannerScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(_getIconForMode(_selectedMode), color: AppColors.primaryBlue, size: 22),
-                      const SizedBox(width: 8),
-                      Text(
-                        _getTitleForMode(_selectedMode).toUpperCase(),
-                        style: GoogleFonts.outfit(
-                          color: AppColors.primaryBlue,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
-                          letterSpacing: 1.0,
+                      Row(
+                        children: [
+                          Icon(_getIconForMode(_selectedMode), color: AppColors.primaryBlue, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            "HASIL DETEKSI",
+                            style: GoogleFonts.outfit(
+                              color: AppColors.primaryBlue,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                      InkWell(
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          _ttsService.speak(_lastResultText);
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryBlue.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.volume_up_rounded, color: AppColors.primaryBlue, size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                "Putar",
+                                style: GoogleFonts.inter(
+                                  color: AppColors.primaryBlue,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -337,9 +456,9 @@ class _HomeScannerScreenState extends State<HomeScannerScreen> {
                     _lastResultText,
                     style: GoogleFonts.inter(
                       color: AppColors.textDark,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      height: 1.4,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      height: 1.45,
                     ),
                     maxLines: 4,
                     overflow: TextOverflow.ellipsis,
@@ -348,16 +467,16 @@ class _HomeScannerScreenState extends State<HomeScannerScreen> {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
-            // Tombol Aksi Raksasa (Large Tap Target untuk Aksesibilitas)
+            // Tombol Aksi Raksasa (Large Tap Target untuk Aksesibilitas Netra)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
                   AccessibleButton(
-                    label: _isAnalyzing ? "MEMPROSES..." : "PINDAI SEKARANG",
-                    icon: Icons.center_focus_strong_rounded,
+                    label: _isAnalyzing ? "MEMPROSES AI..." : "PINDAI SEKARANG",
+                    icon: Icons.camera_enhance_rounded,
                     backgroundColor: AppColors.primaryBlue,
                     textColor: Colors.white,
                     isLoading: _isAnalyzing,
@@ -368,8 +487,8 @@ class _HomeScannerScreenState extends State<HomeScannerScreen> {
                     children: [
                       Expanded(
                         child: AccessibleButton(
-                          label: "Tanya Suara",
-                          icon: Icons.mic_rounded,
+                          label: _isListening ? "Mendengarkan..." : "Tanya Suara",
+                          icon: _isListening ? Icons.graphic_eq_rounded : Icons.mic_rounded,
                           backgroundColor: AppColors.modeVoice,
                           textColor: Colors.white,
                           isPrimary: false,
@@ -381,7 +500,7 @@ class _HomeScannerScreenState extends State<HomeScannerScreen> {
                         child: AccessibleButton(
                           label: "Stop Suara",
                           icon: Icons.stop_circle_rounded,
-                          backgroundColor: const Color(0xFFEF4444),
+                          backgroundColor: const Color(0xFFDC2626),
                           textColor: Colors.white,
                           isPrimary: false,
                           onPressed: () => _ttsService.stop(),
@@ -392,7 +511,75 @@ class _HomeScannerScreenState extends State<HomeScannerScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCameraReticle() {
+    return IgnorePointer(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        child: Stack(
+          children: [
+            // Top-left corner
+            Align(
+              alignment: Alignment.topLeft,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: const BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: AppColors.primaryBlue, width: 4),
+                    left: BorderSide(color: AppColors.primaryBlue, width: 4),
+                  ),
+                ),
+              ),
+            ),
+            // Top-right corner
+            Align(
+              alignment: Alignment.topRight,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: const BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: AppColors.primaryBlue, width: 4),
+                    right: BorderSide(color: AppColors.primaryBlue, width: 4),
+                  ),
+                ),
+              ),
+            ),
+            // Bottom-left corner
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: const BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: AppColors.primaryBlue, width: 4),
+                    left: BorderSide(color: AppColors.primaryBlue, width: 4),
+                  ),
+                ),
+              ),
+            ),
+            // Bottom-right corner
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: const BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: AppColors.primaryBlue, width: 4),
+                    right: BorderSide(color: AppColors.primaryBlue, width: 4),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -400,51 +587,81 @@ class _HomeScannerScreenState extends State<HomeScannerScreen> {
   }
 
   Widget _buildModeSelector() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight, width: 1.5),
+      ),
       child: Row(
         children: [
-          _buildModeChip(ScanMode.objectScene, "📦 Benda & Ruangan", AppColors.modeObject),
-          _buildModeChip(ScanMode.textReader, "📝 Teks & Dokumen", AppColors.modeText),
-          _buildModeChip(ScanMode.currency, "💵 Uang Rupiah", AppColors.modeCurrency),
-          _buildModeChip(ScanMode.voiceQuery, "🎙️ Tanya AI", AppColors.modeVoice),
+          _buildModeTab(ScanMode.objectScene, "Benda", Icons.view_in_ar_rounded, AppColors.modeObject),
+          _buildModeTab(ScanMode.textReader, "Teks", Icons.text_snippet_rounded, AppColors.modeText),
+          _buildModeTab(ScanMode.currency, "Uang", Icons.attach_money_rounded, AppColors.modeCurrency),
+          _buildModeTab(ScanMode.voiceQuery, "Tanya", Icons.mic_rounded, AppColors.modeVoice),
         ],
       ),
     );
   }
 
-  Widget _buildModeChip(ScanMode mode, String label, Color accentColor) {
+  Widget _buildModeTab(ScanMode mode, String label, IconData icon, Color activeColor) {
     bool isSelected = _selectedMode == mode;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: ChoiceChip(
-        label: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textDark,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-            fontSize: 14,
+    return Expanded(
+      child: Semantics(
+        selected: isSelected,
+        label: "Mode ${_getTitleForMode(mode)}",
+        button: true,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() {
+                _selectedMode = mode;
+              });
+              _ttsService.speak("Mode terpilih: ${_getTitleForMode(mode)}");
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: isSelected ? activeColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: activeColor.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
+                    : [],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    size: 18,
+                    color: isSelected ? Colors.white : AppColors.textSubtle,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    label,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected ? Colors.white : AppColors.textDark,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-        selected: isSelected,
-        selectedColor: accentColor,
-        backgroundColor: AppColors.surface,
-        side: BorderSide(
-          color: isSelected ? accentColor : AppColors.borderLight,
-          width: 1.5,
-        ),
-        elevation: isSelected ? 2 : 0,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        onSelected: (selected) {
-          if (selected) {
-            HapticFeedback.selectionClick();
-            setState(() {
-              _selectedMode = mode;
-            });
-            _ttsService.speak("Mode terpilih: ${_getTitleForMode(mode)}");
-          }
-        },
       ),
     );
   }
@@ -473,65 +690,5 @@ class _HomeScannerScreenState extends State<HomeScannerScreen> {
       case ScanMode.voiceQuery:
         return Icons.mic_rounded;
     }
-  }
-
-  void _showApiKeyDialog(BuildContext context) {
-    final geminiController = TextEditingController(text: AppConfig.geminiApiKey);
-    final gcpTtsController = TextEditingController(text: AppConfig.gcpTtsApiKey);
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: AppColors.surface,
-          title: Text(
-            "Pengaturan API Key",
-            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: AppColors.textDark),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: geminiController,
-                decoration: const InputDecoration(
-                  labelText: "Gemini AI API Key",
-                  hintText: "Masukkan API Key Gemini",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: gcpTtsController,
-                decoration: const InputDecoration(
-                  labelText: "GCP Cloud TTS API Key (GCP Credits)",
-                  hintText: "Opsional (Jika pakai Cloud TTS)",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Batal"),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryBlue),
-              onPressed: () {
-                setState(() {
-                  AppConfig.geminiApiKey = geminiController.text.trim();
-                  AppConfig.gcpTtsApiKey = gcpTtsController.text.trim();
-                });
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("API Key berhasil disimpan.")),
-                );
-              },
-              child: const Text("Simpan", style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
-    );
   }
 }
