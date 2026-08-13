@@ -37,21 +37,18 @@ class AccessibleButton extends StatelessWidget {
                   HapticFeedback.mediumImpact();
                   onPressed();
                 },
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 64), // Minimum 64px tap target height untuk aksesibilitas
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          borderRadius: BorderRadius.circular(18),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            constraints: const BoxConstraints(minHeight: 60), // iOS Standard 60px tap target height
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             decoration: BoxDecoration(
               color: backgroundColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isPrimary ? backgroundColor : AppColors.borderLight,
-                width: 2,
-              ),
+              borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: backgroundColor.withValues(alpha: 0.25),
-                  blurRadius: 12,
+                  color: backgroundColor.withValues(alpha: isPrimary ? 0.3 : 0.15),
+                  blurRadius: isPrimary ? 16 : 8,
                   offset: const Offset(0, 4),
                 ),
               ],
@@ -61,24 +58,24 @@ class AccessibleButton extends StatelessWidget {
               children: [
                 if (isLoading)
                   const SizedBox(
-                    width: 24,
-                    height: 24,
+                    width: 22,
+                    height: 22,
                     child: CircularProgressIndicator(
                       color: Colors.white,
-                      strokeWidth: 3,
+                      strokeWidth: 2.5,
                     ),
                   )
                 else
-                  Icon(icon, color: textColor, size: 28),
-                const SizedBox(width: 12),
+                  Icon(icon, color: textColor, size: 24),
+                const SizedBox(width: 10),
                 Flexible(
                   child: Text(
                     label,
                     style: TextStyle(
                       color: textColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.3,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.4, // iOS SF Pro typography kerning
                     ),
                     textAlign: TextAlign.center,
                   ),

@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>MataSuara memerlukan akses kamera untuk mengambil gambar dan menganalisis objek.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>MataSuara memerlukan akses mikrofon untuk perintah suara dan pengenalan ucapan.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>MataSuara memerlukan pengenalan ucapan untuk memproses perintah suara Anda.</string>
 </dict>
 </plist>

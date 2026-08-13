@@ -8,8 +8,16 @@ import '../config/app_config.dart';
 class TtsService {
   final FlutterTts _flutterTts = FlutterTts();
   bool _isSpeaking = false;
+  int _currentStart = -1;
+  int _currentEnd = -1;
+  Timer? _highlightTimer;
+
+  void Function(int start, int end)? onProgress;
+  VoidCallback? onSpeechCompleted;
 
   bool get isSpeaking => _isSpeaking;
+  int get currentStart => _currentStart;
+  int get currentEnd => _currentEnd;
 
   Future<void> init() async {
     try {
@@ -24,15 +32,76 @@ class TtsService {
 
       _flutterTts.setCompletionHandler(() {
         _isSpeaking = false;
+        _resetProgress();
+        if (onSpeechCompleted != null) onSpeechCompleted!();
       });
 
       _flutterTts.setErrorHandler((msg) {
         _isSpeaking = false;
+        _resetProgress();
         debugPrint("FlutterTTS Error: $msg");
+      });
+
+      _flutterTts.setProgressHandler((String text, int start, int end, String word) {
+        _isSpeaking = true;
+        _currentStart = start;
+        _currentEnd = end;
+        if (onProgress != null) {
+          onProgress!(start, end);
+        }
       });
     } catch (e) {
       debugPrint("Gagal menginisialisasi FlutterTTS: $e");
     }
+  }
+
+  void _resetProgress() {
+    _highlightTimer?.cancel();
+    _currentStart = -1;
+    _currentEnd = -1;
+    if (onProgress != null) {
+      onProgress!(-1, -1);
+    }
+  }
+
+  /// Simulator / Engine fallback word highlighter jika engine TTS native lambat mengirimkan progress
+  void _startFallbackHighlighter(String text) {
+    _highlightTimer?.cancel();
+    final words = text.split(RegExp(r'\s+'));
+    if (words.isEmpty) return;
+
+    List<int> wordStarts = [];
+    List<int> wordEnds = [];
+    int currentIndex = 0;
+
+    for (final word in words) {
+      int start = text.indexOf(word, currentIndex);
+      if (start != -1) {
+        wordStarts.add(start);
+        wordEnds.add(start + word.length);
+        currentIndex = start + word.length;
+      }
+    }
+
+    if (wordStarts.isEmpty) return;
+
+    int index = 0;
+    // Rata-rata durasi per kata dengan speechRate 0.5 ~ 380ms per kata
+    const wordDuration = Duration(milliseconds: 360);
+
+    _highlightTimer = Timer.periodic(wordDuration, (timer) {
+      if (!_isSpeaking || index >= wordStarts.length) {
+        timer.cancel();
+        return;
+      }
+
+      _currentStart = wordStarts[index];
+      _currentEnd = wordEnds[index];
+      if (onProgress != null) {
+        onProgress!(_currentStart, _currentEnd);
+      }
+      index++;
+    });
   }
 
   /// Mengucapkan teks dan menunggu hingga suara selesai dibacakan penuh.
@@ -45,6 +114,7 @@ class TtsService {
 
     _flutterTts.setCompletionHandler(() {
       _isSpeaking = false;
+      _resetProgress();
       if (!completer.isCompleted) {
         completer.complete();
       }
@@ -52,6 +122,7 @@ class TtsService {
 
     _flutterTts.setErrorHandler((msg) {
       _isSpeaking = false;
+      _resetProgress();
       if (!completer.isCompleted) {
         completer.complete();
       }
@@ -64,6 +135,7 @@ class TtsService {
       }
     });
 
+    _startFallbackHighlighter(text);
     await _flutterTts.speak(text);
     await completer.future;
   }
@@ -75,6 +147,7 @@ class TtsService {
     await stop();
 
     _isSpeaking = true;
+    onSpeechCompleted = onComplete;
 
     // Coba gunakan GCP Cloud Text-to-Speech API jika GCP Key terkonfigurasi
     final apiKey = AppConfig.gcpTtsApiKey.isNotEmpty
@@ -120,6 +193,7 @@ class TtsService {
         final data = jsonDecode(response.body);
         final audioContent = data['audioContent'];
         if (audioContent != null) {
+          _startFallbackHighlighter(text);
           await _flutterTts.speak(text);
           if (onComplete != null) onComplete();
           return true;
@@ -134,25 +208,30 @@ class TtsService {
 
   Future<void> _speakWithNativeTts(String text, VoidCallback? onComplete) async {
     try {
+      _startFallbackHighlighter(text);
       await _flutterTts.speak(text);
       if (onComplete != null) {
         _flutterTts.setCompletionHandler(() {
           _isSpeaking = false;
+          _resetProgress();
           onComplete();
         });
       }
     } catch (e) {
       _isSpeaking = false;
+      _resetProgress();
       debugPrint("Native TTS Exception: $e");
     }
   }
 
   Future<void> stop() async {
     _isSpeaking = false;
+    _resetProgress();
     await _flutterTts.stop();
   }
 
   void dispose() {
+    _resetProgress();
     _flutterTts.stop();
   }
 }

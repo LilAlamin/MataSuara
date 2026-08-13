@@ -18,6 +18,7 @@ dependencies:
   flutter_spinkit: ^5.2.1
   vibration: ^2.0.1
   permission_handler: ^11.3.1
+  cupertino_icons: ^1.0.8
 
 dev_dependencies:
   flutter_test:

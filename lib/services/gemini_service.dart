@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
 
-enum ScanMode { objectScene, textReader, currency, voiceQuery }
+enum ScanMode { scan, navigation }
 
 class GeminiService {
   /// Mengirim gambar ke Gemini AI Multimodal Vision menggunakan HTTP REST API
@@ -79,8 +79,8 @@ class GeminiService {
           final errMessage = resData['error']?['message'] ?? response.body;
           final errReason = resData['error']?['details']?[0]?['reason'] ?? "";
           debugPrint("GCP Gemini HTTP Error ($model): $errMessage");
-          if (errReason == "API_KEY_SERVICE_BLOCKED" || response.statusCode == 403) {
-            return "API Key Gemini belum diizinkan untuk Generative Language API. Dapatkan API Key gratis di aistudio.google.com";
+          if (errMessage.toLowerCase().contains("leaked") || errReason == "API_KEY_SERVICE_BLOCKED" || response.statusCode == 403) {
+            return "API Key Gemini dilaporkan bocor atau diblokir. Harap gunakan API Key baru dari aistudio.google.com";
           }
           if (response.statusCode == 429) {
             return "Kredit/Kuota API Key Gemini pada akun ini telah habis (RESOURCE_EXHAUSTED). Harap buat API Key baru di akun Google AI Studio lain atau isi saldo di ai.studio.";
@@ -98,39 +98,29 @@ class GeminiService {
 
   String _getPromptForMode(ScanMode mode, String? userQuestion) {
     switch (mode) {
-      case ScanMode.objectScene:
-        return "Anda adalah asisten suara terbaik untuk pengguna disabilitas netra. "
-            "Jelaskan benda utama dan posisi/jaraknya dalam gambar ini dalam 1-2 kalimat ringkas, padat, dan jelas dalam Bahasa Indonesia. "
-            "Contoh format: 'Di depan Anda ada [benda] di atas [lokasi] berjarak sekitar [perkiraan jarak]'.";
+      case ScanMode.scan:
+        if (userQuestion != null && userQuestion.isNotEmpty) {
+          return "Anda adalah asisten AI ramah untuk disabilitas netra. "
+              "Jawab pertanyaan pengguna berikut berdasarkan gambar yang diberikan secara singkat dan akurat dalam Bahasa Indonesia. "
+              "Pertanyaan Pengguna: '$userQuestion'";
+        }
+        return "Anda adalah asisten suara pintar untuk disabilitas netra. "
+            "Analisis gambar di depan pengguna: sebutkan benda utama, baca teks yang ada, atau kenali nominal uang rupiah yang terlihat secara serentak dalam 1-2 kalimat ringkas, padat, dan jelas dalam Bahasa Indonesia.";
 
-      case ScanMode.textReader:
-        return "Anda adalah asisten pembaca teks untuk pengguna disabilitas netra. "
-            "Bacakan seluruh teks atau tulisan yang tertera pada gambar ini secara akurat dan urut dalam Bahasa Indonesia. "
-            "Jika tidak ada teks, katakan 'Tidak ditemukan teks pada gambar ini'.";
-
-      case ScanMode.currency:
-        return "Anda adalah asisten pengenal uang kertas rupiah untuk disabilitas netra. "
-            "Sebutkan nilai nominal uang kertas Rupiah (IDR) yang ada di dalam gambar ini secara tegas dan singkat. "
-            "Contoh: 'Terdeteksi uang kertas lima puluh ribu rupiah'. Jika tidak jelas, sebutkan uang tidak terdeteksi.";
-
-      case ScanMode.voiceQuery:
-        return "Anda adalah asisten AI ramah untuk disabilitas netra. "
-            "Jawab pertanyaan pengguna berikut berdasarkan gambar yang diberikan secara singkat dan akurat dalam Bahasa Indonesia. "
-            "Pertanyaan Pengguna: '${userQuestion ?? 'Apa yang ada di gambar ini?'}'";
+      case ScanMode.navigation:
+        return "Anda adalah asisten petunjuk arah jalan dan navigasi untuk pengguna disabilitas netra. "
+            "Berikan petunjuk arah dan posisi halangan/ruangan secara presisi dalam 1-2 kalimat Bahasa Indonesia. "
+            "Contoh format: 'Di depan Anda jalan aman lurus, di sebelah kanan ada meja berjarak 1 meter. Tidak ada halangan berbahaya'.";
     }
   }
 
   /// Simulasi respon cepat jika API key belum diisi oleh developer
   String _generateDemoResponse(ScanMode mode, String? userQuestion) {
     switch (mode) {
-      case ScanMode.objectScene:
-        return "Di depan Anda terdapat cangkir kopi putih di atas meja kayu berjarak sekitar 1 meter.";
-      case ScanMode.textReader:
-        return "Teks terdeteksi: Pintu Keluar Darurat. Harap menjaga ketertiban.";
-      case ScanMode.currency:
-        return "Terdeteksi uang kertas lima puluh ribu rupiah.";
-      case ScanMode.voiceQuery:
-        return "Berdasarkan gambar, benda di depan Anda adalah botol air mineral.";
+      case ScanMode.scan:
+        return "Di depan Anda terdapat cangkir kopi putih dan teks 'Pintu Keluar' berjarak 1 meter.";
+      case ScanMode.navigation:
+        return "Di depan Anda terdapat jalur lurus aman berjarak 2 meter. Di sebelah kanan ada kursi kayu.";
     }
   }
 }
